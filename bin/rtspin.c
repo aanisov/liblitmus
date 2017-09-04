@@ -216,30 +216,32 @@ static int loop_for(double exec_time, double emergency_exit)
 	double last_loop = 0, loop_start;
 	int tmp = 0;
 
-	double start = cputime();
-	double now = cputime();
+	if (cycles_ms > 0) {
+		int count = cycles_ms * (int)(exec_time * 1000);
+		tmp += loop(count);
+	} else {
+		double start = cputime();
+		double now = cputime();
 
-	while (now + last_loop < start + exec_time) {
-		loop_start = now;
-		if (cycles_ms) {
-			int count = cycles_ms * (int)(exec_time * 1000);
-			tmp += loop(count);
-		} else if (nr_of_pages)
-			tmp += loop_once_with_mem();
-		else
-			tmp += loop_once();
-		now = cputime();
-		last_loop = now - loop_start;
-		if (emergency_exit && wctime() > emergency_exit) {
-			/* Oops --- this should only be possible if the
-			 * execution time tracking is broken in the LITMUS^RT
-			 * kernel or the user specified infeasible parameters.
-			 */
-			fprintf(stderr, "!!! rtspin/%d emergency exit!\n",
-			        getpid());
-			fprintf(stderr, "Reached experiment timeout while "
-			        "spinning.\n");
-			break;
+		while (now + last_loop < start + exec_time) {
+			loop_start = now;
+			if (nr_of_pages)
+				tmp += loop_once_with_mem();
+			else
+				tmp += loop_once();
+			now = cputime();
+			last_loop = now - loop_start;
+			if (emergency_exit && wctime() > emergency_exit) {
+				/* Oops --- this should only be possible if the
+				 * execution time tracking is broken in the LITMUS^RT
+				 * kernel or the user specified infeasible parameters.
+				 */
+				fprintf(stderr, "!!! rtspin/%d emergency exit!\n",
+						getpid());
+				fprintf(stderr, "Reached experiment timeout while "
+						"spinning.\n");
+				break;
+			}
 		}
 	}
 
@@ -264,26 +266,6 @@ static void debug_delay_loop(void)
 		}
 	}
 }
-
-static void debug_delay_cycles(int count)
-{
-	double start, end;
-    int delay;
-
-	while (1) {
-		for (delay = 500; delay > 10; delay -= 10) {
-			start = wctime();
-			loop(count * delay);
-			end = wctime();
-			printf("%dms: looped for %10.8fs, delta=%11.8fs, error=%7.4f%%\n",
-			       delay,
-			       end - start,
-			       end - start - (delay * 0.001),
-			       100 * (end - start - (delay * 0.001)) / (delay * 0.001));
-		}
-	}
-}
-
 
 static int calibrate_ms(int ms)
 {
@@ -579,11 +561,9 @@ int main(int argc, char** argv)
 	srand(getpid());
 
 	if (test_loop) {
-		printf("let us test loop with %d cycles", cycles_ms);
-		if ( cycles_ms == 0)
-			debug_delay_loop();
-		else
-			debug_delay_cycles(cycles_ms);
+		if ( cycles_ms > 0)
+			printf("Evaluating loop with %d cycles:\n", cycles_ms);
+		debug_delay_loop();
 		return 0;
 	}
 
