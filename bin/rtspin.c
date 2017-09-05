@@ -215,7 +215,7 @@ static int loop_for(double exec_time, double emergency_exit)
 	int tmp = 0;
 
     if (cycles_ms) {
-        int count = cycles_ms * (int)(exec_time * 1000);
+        int count = cycles_ms * (int)(exec_time * 1000.0d + 0.5d);
         tmp += loop(count);
     } else {
         double last_loop = 0, loop_start;
