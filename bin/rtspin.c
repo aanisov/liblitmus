@@ -215,8 +215,11 @@ static int loop_for(double exec_time, double emergency_exit)
 	int tmp = 0;
 
     if (cycles_ms) {
-        int count = cycles_ms * (int)(exec_time * 1000.0d + 0.5d);
-        tmp += loop(count);
+        //int count = cycles_ms * (int)(exec_time * 1000.0d + 0.5d);
+        double exec_time_ms = exec_time * 1000;
+        int count_ms = (int)(exec_time_ms);
+        printf("\texec_time = %.16e \n\texec_time_ms = %.16e \n\tcount_ms = %d\n", exec_time, exec_time_ms, count_ms);
+        tmp += loop(count_ms * cycles_ms);
     } else {
         double last_loop = 0, loop_start;
         double start = cputime();
